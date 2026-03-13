@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Cerro Dragón — Seguimiento IT</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 3 L60 15 L60 36 C60 50 47 60 32 63 C17 60 4 50 4 36 L4 15 Z' fill='%231a2e3a'/%3E%3Cpath d='M32 3 L60 15 L60 36 C60 50 47 60 32 63 C17 60 4 50 4 36 L4 15 Z' fill='none' stroke='%2300b4c8' stroke-width='2'/%3E%3Cpath d='M19 33 L27 43 L45 22' stroke='%2300d4e8' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"/>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F4F8;color:#222;font-size:13px}
+.header{background:linear-gradient(135deg,#1565C0,#0D47A1);padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.header-left h1{color:#fff;font-size:20px;font-weight:700;letter-spacing:.5px}
+.header-left p{color:#90CAF9;font-size:11px;margin-top:2px}
+.header-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border:none;border-radius:6px;padding:7px 14px;font-weight:600;cursor:pointer;font-size:12px;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn-white{background:#fff;color:#1565C0}
+.btn-orange{background:#E65100;color:#fff}
+.btn-sync{background:#ffffff22;color:#fff;border:1px solid #ffffff44;font-size:11px;padding:5px 10px}
+.card{background:#fff;border-radius:10px;padding:16px 20px;margin:12px 16px;box-shadow:0 1px 5px #0001}
+.card h2{font-size:13px;font-weight:700;margin-bottom:12px;color:#444}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.stat{border-radius:8px;padding:9px 16px;text-align:center;min-width:82px;border:1.5px solid}
+.stat .n{font-size:21px;font-weight:700}
+.stat .l{font-size:10px;color:#666;margin-top:1px}
+.progress-bar{background:#E0E0E0;border-radius:20px;height:13px;overflow:hidden;margin-bottom:4px}
+.progress-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,#43A047,#66BB6A);transition:width .5s}
+.prog-label{font-size:11px;color:#888}
+.fase{background:#fff;border-radius:10px;margin:0 16px 10px;box-shadow:0 1px 4px #0001;overflow:hidden;min-width:0}
+.table-wrap{overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch}
+.fase-header{padding:11px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;border-left:5px solid}
+.fase-title{font-weight:700;font-size:14px}
+.fase-sub{font-size:11px;color:#666;margin-top:2px}
+.fase-right{display:flex;align-items:center;gap:10px}
+.fase-pct{font-size:17px;font-weight:700}
+.fase-pct-lbl{font-size:10px;color:#888}
+.mini-bar{width:55px;background:#E0E0E0;border-radius:10px;height:7px}
+.mini-fill{height:100%;border-radius:10px;transition:width .4s}
+.chevron{font-size:13px;color:#999}
+table{width:100%;border-collapse:collapse}
+thead tr{background:#F5F5F5}
+thead th{padding:7px 10px;text-align:left;font-weight:600;color:#777;font-size:11px;border-bottom:1px solid #eee;white-space:nowrap}
+tbody tr{border-top:1px solid #F0F0F0}
+tbody tr:nth-child(even){background:#FAFAFA}
+td{padding:7px 10px;vertical-align:middle}
+.td-id{color:#999;font-size:11px;white-space:nowrap}
+.td-nombre{font-weight:500}
+.td-detalle{color:#666;font-size:11px}
+select.st{border-radius:5px;padding:3px 6px;font-size:11px;font-weight:600;cursor:pointer;border-width:1.5px;border-style:solid;width:100%}
+select.st:disabled{cursor:default;opacity:1;-webkit-appearance:none;-moz-appearance:none;appearance:none}
+input.inp{border:1px solid #E0E0E0;border-radius:5px;padding:4px 8px;font-size:11px;width:100%}
+input.inp:focus{outline:none;border-color:#1565C0}
+input.inp:disabled{cursor:default;background:#fff;color:#444;border-color:transparent}
+input.date-inp{border:1px solid #E0E0E0;border-radius:5px;padding:3px 6px;font-size:11px;width:100%;color:#444;background:#fff}
+input.date-inp:focus{outline:none;border-color:#1565C0}
+input.date-inp:disabled{cursor:default;border-color:transparent;background:#fff}
+textarea.obs{border:1px solid #E0E0E0;border-radius:5px;padding:4px 8px;font-size:11px;width:100%;resize:vertical;min-height:32px;font-family:inherit}
+textarea.obs:focus{outline:none;border-color:#1565C0}
+textarea.obs[readonly]{cursor:default;background:#fff;resize:none;border-color:transparent}
+.edit-btn{background:none;border:1px solid #ddd;border-radius:4px;padding:2px 7px;font-size:11px;cursor:pointer;color:#555}
+.edit-btn:hover{background:#f0f0f0}
+.del-btn{background:none;border:1px solid #ffcdd2;border-radius:4px;padding:2px 7px;font-size:11px;cursor:pointer;color:#c62828}
+.del-btn:hover{background:#ffebee}
+.overlay{display:none;position:fixed;inset:0;background:#0006;z-index:100;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:12px;padding:24px;width:90%;max-width:520px;box-shadow:0 8px 32px #0003;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:16px;margin-bottom:16px;color:#1565C0}
+.form-row{margin-bottom:12px}
+.form-row label{display:block;font-size:11px;font-weight:600;color:#555;margin-bottom:4px}
+.form-row input,.form-row textarea,.form-row select{width:100%;border:1px solid #ddd;border-radius:6px;padding:8px 10px;font-size:13px;font-family:inherit}
+.form-row textarea{min-height:60px;resize:vertical}
+.form-row input:focus,.form-row textarea:focus{outline:none;border-color:#1565C0}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.color-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.color-opt{width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent}
+.color-opt.sel{border-color:#222}
+.badge-edit{display:inline-block;background:#E65100;color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:6px;vertical-align:middle}
+.proj-name{cursor:pointer;border-bottom:2px dashed #90CAF9;padding-bottom:1px}
+.proj-name:hover{border-color:#fff}
+.footer{text-align:center;color:#aaa;font-size:10px;padding:14px}
+.toast{position:fixed;bottom:20px;right:20px;background:#323232;color:#fff;padding:10px 18px;border-radius:8px;font-size:12px;opacity:0;transition:opacity .3s;z-index:200;pointer-events:none}
+.toast.show{opacity:1}
+#loading{position:fixed;inset:0;background:#F0F4F8;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:300;gap:12px}
+#loading .spinner{width:36px;height:36px;border:4px solid #ddd;border-top-color:#1565C0;border-radius:50%;animation:spin .8s linear infinite}
+#loading p{color:#888;font-size:13px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="spinner"></div><p>Cargando datos...</p></div>
+
+<div class="header">
+  <div class="header-left">
+    <h1>🐉 <span id="projTitle" class="proj-name" onclick="if(isAdmin)editProjectName()">Cerro Dragón</span></h1>
+    <p id="projSub">Panel de Seguimiento IT</p>
+  </div>
+  <div class="header-right" id="headerRight">
+    <button class="btn btn-sync" onclick="syncNow()">🔄 Actualizar</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📊 Resumen General</h2>
+  <div class="stats" id="stats"></div>
+  <div class="progress-bar"><div class="progress-fill" id="globalBar"></div></div>
+  <div class="prog-label" id="globalLabel"></div>
+</div>
+
+<div id="fases"></div>
+<div id="addFaseZone" style="display:none;margin:0 16px 16px;text-align:center">
+  <button class="btn btn-orange" onclick="openFaseModal()">＋ Agregar nueva fase</button>
+</div>
+<div class="footer">Datos sincronizados con Firebase · Último guardado: <span id="lastSaved">—</span></div>
+
+<!-- MODALS -->
+<div class="overlay" id="modalFase">
+  <div class="modal">
+    <h3 id="modalFaseTitle">Nueva Fase</h3>
+    <div class="form-row"><label>Nombre</label><input id="fNombre" placeholder="Ej: Infraestructura de Red"/></div>
+    <div class="form-row"><label>Descripción</label><input id="fDesc" placeholder="Breve descripción"/></div>
+    <div class="form-row"><label>Ícono (emoji)</label><input id="fIcon" placeholder="🔌" style="font-size:18px;width:60px"/></div>
+    <div class="form-row"><label>Color</label><div class="color-grid" id="colorGrid"></div></div>
+    <div class="modal-btns">
+      <button class="btn" style="background:#eee;color:#333" onclick="closeFaseModal()">Cancelar</button>
+      <button class="btn btn-orange" onclick="saveFase()">Guardar Fase</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modalTarea">
+  <div class="modal">
+    <h3 id="modalTareaTitle">Nueva Tarea</h3>
+    <div class="form-row"><label>Nombre</label><input id="tNombre" placeholder="Ej: Tendido de cable UTP"/></div>
+    <div class="form-row"><label>Detalle</label><textarea id="tDetalle" placeholder="Descripción detallada..."></textarea></div>
+    <input type="hidden" id="tFaseId"/><input type="hidden" id="tId"/>
+    <div class="modal-btns">
+      <button class="btn" style="background:#eee;color:#333" onclick="closeTareaModal()">Cancelar</button>
+      <button class="btn" style="background:#43A047;color:#fff" onclick="saveTarea()">Guardar Tarea</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modalProj">
+  <div class="modal">
+    <h3>Editar Proyecto</h3>
+    <div class="form-row"><label>Nombre</label><input id="pNombre"/></div>
+    <div class="form-row"><label>Subtítulo</label><input id="pSub"/></div>
+    <div class="modal-btns">
+      <button class="btn" style="background:#eee;color:#333" onclick="document.getElementById('modalProj').classList.remove('open')">Cancelar</button>
+      <button class="btn" style="background:#1565C0;color:#fff" onclick="saveProjectName()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── FIREBASE ────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyC_xT9TsUgjPKo3xkZ4aXHDLiaX4mv9Nyc",
+  authDomain: "cerro-dragon-tracker.firebaseapp.com",
+  databaseURL: "https://cerro-dragon-tracker-default-rtdb.firebaseio.com",
+  projectId: "cerro-dragon-tracker",
+  storageBucket: "cerro-dragon-tracker.firebasestorage.app",
+  messagingSenderId: "852268298464",
+  appId: "1:852268298464:web:a44024255bbd9c080ca085"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const stateRef = db.ref("tracker");
+
+// ─── COLLAPSED — localStorage por dispositivo (independiente) ────
+const COLLAPSE_KEY = "cd_collapsed_v1";
+function loadCollapsed() {
+  try { return JSON.parse(localStorage.getItem(COLLAPSE_KEY)) || {}; } catch { return {}; }
+}
+function saveCollapsed(c) {
+  try { localStorage.setItem(COLLAPSE_KEY, JSON.stringify(c)); } catch {}
+}
+let collapsed = loadCollapsed();
+
+// ─── DEFAULT DATA ─────────────────────────────────────────────────
+const DEFAULT = {
+  project: { name:"Cerro Dragón", sub:"Panel de Seguimiento IT" },
+  tasks: {},
+  fases: [
+    { id:"F1", icon:"🔌", nombre:"Infraestructura de Red", desc:"Cableado estructurado, fibra óptica y certificación", color:"#1565C0", tareas:[
+      {id:"F1-1",n:"Relevamiento de cableado existente",d:"Mapear y documentar puntos de red activos, recorridos, estado del cable y tomas existentes."},
+      {id:"F1-2",n:"Diseño de plano de red",d:"Elaborar plano con distribución de puntos de red, recorrido de canaletas/bandejas y ubicación de gabinetes."},
+      {id:"F1-3",n:"Compra de materiales de cableado",d:"Cable UTP Cat6A FTP, patch panels, canaletas, bandejas, tomas RJ45, patch cords y gabinetes secundarios."},
+      {id:"F1-4",n:"Montaje de canaletas y bandejas portacables",d:"Instalación de canaletas y bandejas en recorridos definidos por plano."},
+      {id:"F1-5",n:"Tendido de cable UTP Cat6A FTP",d:"Tendido de cable desde rack central hasta cada punto de red de usuario."},
+      {id:"F1-6",n:"Instalación de tomas de red (rosetas RJ45)",d:"Colocación y ponchado de rosetas en cada puesto de trabajo."},
+      {id:"F1-7",n:"Instalación y ponchado de patch panels",d:"Ponchado y etiquetado de patch panels en rack central."},
+      {id:"F1-8",n:"Etiquetado de cables en ambos extremos",d:"Etiquetar cada cable en roseta y patch panel con código único."},
+      {id:"F1-9",n:"Certificación de enlaces (Cat6A)",d:"Certificar cada enlace: atenuación, NEXT, longitud. Generar informe."},
+      {id:"F1-10",n:"Backbone de fibra óptica entre sectores",d:"Tendido de fibra monomodo en distancias >90m. Fusiones y conectorización."},
+      {id:"F1-11",n:"Instalación de SFP / media converters",d:"Conectar fibra a switches mediante módulos SFP o media converters."},
+      {id:"F1-12",n:"Prueba de conectividad end-to-end",d:"Verificar conectividad en cada puesto desde el rack central."},
+    ]},
+    { id:"F2", icon:"🖥️", nombre:"Rack Central y Equipamiento", desc:"Compra, armado e instalación del rack", color:"#4527A0", tareas:[
+      {id:"F2-1",n:"Compra de router Mikrotik",d:"Adquisición de router Mikrotik para rack central."},
+      {id:"F2-2",n:"Compra de Firewall Forti 60F/80F + Licencia",d:"Compra de firewall Forti + Licencia 1er año incluida."},
+      {id:"F2-3",n:"Compra de UPS 10KVA",d:"UPS central para toda la oficina. Incluye cableado protegido."},
+      {id:"F2-4",n:"Compra de Rack tipo heladera",d:"Ver disponibilidad de espacio en oficina Novadrill."},
+      {id:"F2-5",n:"Preparación del NAS (migración desde PMK)",d:"Preparar NAS que se retira de PMK para integrar al nuevo rack."},
+      {id:"F2-6",n:"Armado e instalación del rack en sitio",d:"Colocar patchera, bandejas, NAS, Mikrotik y Forti. Migrar patchcords."},
+    ]},
+    { id:"F3", icon:"🔒", nombre:"Seguridad y Acceso Remoto", desc:"VPN, cámaras y accesos externos", color:"#B71C1C", tareas:[
+      {id:"F3-1",n:"Configuración de VPN (Forti)",d:"Configurar acceso VPN en Forti para usuarios externos."},
+      {id:"F3-2",n:"Configuración de acceso al DVR (cámaras)",d:"Miguel tiene las configuraciones de acceso al DVR."},
+      {id:"F3-3",n:"Configurar acceso externo a cámaras",d:"Habilitar acceso externo en usuarios solicitados."},
+    ]},
+    { id:"F4", icon:"💻", nombre:"Equipos para Usuarios Finales", desc:"Compra, configuración e instalación de equipos", color:"#2E7D32", tareas:[
+      {id:"F4-1",n:"Compra de PCs, notebooks e impresoras",d:"Adquisición de equipos para usuarios finales."},
+      {id:"F4-2",n:"Compra e instalación de licencias Windows 10/11",d:"Compra e instalación de licencias Windows."},
+      {id:"F4-3",n:"Configuración de usuarios locales y admin",d:"Configuración de usuarios locales y administrador en cada equipo."},
+      {id:"F4-4",n:"Instalación y configuración de Office 365",d:"Instalación de Suite Office 365 y aplicaciones."},
+      {id:"F4-5",n:"Configuración de impresoras en red",d:"Configurar impresoras en red y asignar accesos a usuarios."},
+    ]},
+    { id:"F5", icon:"☁️", nombre:"Cuentas y Servicios Cloud (O365)", desc:"Office 365, correo y buzones compartidos", color:"#E65100", tareas:[
+      {id:"F5-1",n:"Creación de cuentas y buzones en Office 365",d:"Crear cuentas en Office365. Mails y buzones compartidos."},
+      {id:"F5-2",n:"Configuración de cuenta IMAP en PC/notebook",d:"Configurar cuenta IMAP de Office365 en los equipos."},
+    ]},
+    { id:"F6", icon:"⚡", nombre:"Infraestructura Eléctrica Protegida", desc:"Línea eléctrica protegida por UPS", color:"#F57F17", tareas:[
+      {id:"F6-1",n:"Cableado de línea protegida UPS (tomas rojos)",d:"Cableado eléctrico desde UPS central. Identificar tomas de color rojo."},
+    ]},
+    { id:"F7", icon:"📋", nombre:"Datos, Documentación e Inventario", desc:"Base de datos, organigrama y accesos NAS", color:"#00695C", tareas:[
+      {id:"F7-1",n:"Definición de organigrama y dependencias",d:"Conocer puestos y dependencias para árbol de accesos."},
+      {id:"F7-2",n:"Definición de árbol de accesos y carpetas NAS",d:"Configurar estructura de carpetas y permisos en el NAS."},
+      {id:"F7-3",n:"Creación de base de datos de equipos",d:"Exportar e importar base de PMK y adecuar a Novadrill (requiere 365)."},
+      {id:"F7-4",n:"Etiquetado físico de equipos informáticos",d:"Imprimir y pegar etiquetas con código en cada equipo."},
+    ]},
+    { id:"F8", icon:"📦", nombre:"Software de Gestión (Tango)", desc:"Traspaso y activación de licencias Tango", color:"#6A1B9A", tareas:[
+      {id:"F8-1",n:"Traspaso administrativo de licencias Tango",d:"Cesión de Hugo Sánchez a RGA de las licencias de Tango."},
+      {id:"F8-2",n:"Activación de licencias con nuevo proveedor",d:"Activar en enero las licencias a nombre de RGA."},
+    ]},
+    { id:"F9", icon:"📡", nombre:"Conectividad Trailer", desc:"Red WiFi o cableado interno en el trailer", color:"#37474F", tareas:[
+      {id:"F9-1",n:"Evaluar WiFi Unifi vs cableado interno",d:"Definir si se instala Unifi WiFi o cableado con 4 puestos + switch local."},
+      {id:"F9-2",n:"Implementación de conectividad en trailer",d:"Ejecutar la solución elegida: Unifi WiFi o cableado con switch local."},
+    ]},
+  ]
+};
+
+const COLORS = ["#1565C0","#4527A0","#B71C1C","#2E7D32","#E65100","#F57F17","#00695C","#6A1B9A","#37474F","#00838F","#4E342E","#558B2F"];
+const STATUS = {
+  "Pendiente":   {color:"#757575",bg:"#F5F5F5"},
+  "En progreso": {color:"#1565C0",bg:"#E3F2FD"},
+  "Completado":  {color:"#2E7D32",bg:"#E8F5E9"},
+  "Bloqueado":   {color:"#B71C1C",bg:"#FFEBEE"},
+};
+
+let appState = JSON.parse(JSON.stringify(DEFAULT));
+let editMode = false;
+let editingFaseIdx = null;
+let selectedColor = COLORS[0];
+let saveTimer = null;
+const isAdmin = new URLSearchParams(window.location.search).get("edit") === "rga2025";
+
+// ─── FIREBASE SAVE ────────────────────────────────────────────────
+function saveState() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    // collapsed NO se guarda en Firebase, es local por dispositivo
+    const toSave = { project: appState.project, tasks: appState.tasks, fases: appState.fases };
+    stateRef.set(toSave)
+      .then(() => {
+        const now = new Date();
+        document.getElementById("lastSaved").textContent =
+          now.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+        showToast("✅ Guardado en la nube");
+      })
+      .catch(() => showToast("❌ Error al guardar"));
+  }, 600);
+}
+
+function syncNow() {
+  showToast("🔄 Sincronizando...");
+  stateRef.once("value", snap => {
+    const data = snap.val();
+    if (data) { appState = data; if(!appState.tasks) appState.tasks={}; render(); showToast("✅ Datos actualizados"); }
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────
+function lighten(hex) {
+  const c = parseInt(hex.slice(1),16);
+  return `rgb(${Math.min(255,((c>>16)&255)+175)},${Math.min(255,((c>>8)&255)+155)},${Math.min(255,(c&255)+155)})`;
+}
+function getTaskData(id) { return (appState.tasks && appState.tasks[id]) || {}; }
+function setTaskField(id, key, val) {
+  if (!appState.tasks) appState.tasks = {};
+  if (!appState.tasks[id]) appState.tasks[id] = {};
+  appState.tasks[id][key] = val;
+  saveState();
+  if (key === "status") { updateStats(); updateFaseProgress(); styleSelect(document.getElementById("sel-"+id), val); }
+}
+function styleSelect(el, val) {
+  if (!el) return;
+  const si = STATUS[val] || STATUS["Pendiente"];
+  el.style.color = si.color; el.style.background = si.bg; el.style.borderColor = si.color;
+}
+function fmtDate(val) {
+  if (!val) return "—";
+  const [y,m,d] = val.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+// ─── STATS ───────────────────────────────────────────────────────
+function updateStats() {
+  const all = appState.fases.flatMap(f => f.tareas);
+  const total = all.length;
+  const counts = {"Pendiente":0,"En progreso":0,"Completado":0,"Bloqueado":0};
+  all.forEach(t => counts[getTaskData(t.id).status || "Pendiente"]++);
+  const pct = total ? Math.round((counts["Completado"]/total)*100) : 0;
+  document.getElementById("stats").innerHTML =
+    Object.entries(counts).map(([k,v]) =>
+      `<div class="stat" style="background:${STATUS[k].bg};border-color:${STATUS[k].color}">
+        <div class="n" style="color:${STATUS[k].color}">${v}</div><div class="l">${k}</div>
+      </div>`
+    ).join("") +
+    `<div class="stat" style="background:#FFF8E1;border-color:#F9A825">
+      <div class="n" style="color:#F9A825">${pct}%</div><div class="l">Avance total</div>
+    </div>`;
+  document.getElementById("globalBar").style.width = pct+"%";
+  document.getElementById("globalLabel").textContent = `${counts["Completado"]} de ${total} tareas completadas`;
+}
+
+function updateFaseProgress() {
+  appState.fases.forEach(f => {
+    const done = f.tareas.filter(t => (getTaskData(t.id).status||"Pendiente")==="Completado").length;
+    const pct = f.tareas.length ? Math.round(done/f.tareas.length*100) : 0;
+    const fill = document.getElementById("fill-"+f.id);
+    const pctEl = document.getElementById("pct-"+f.id);
+    const lbl = document.getElementById("lbl-"+f.id);
+    if (fill) fill.style.width = pct+"%";
+    if (pctEl) pctEl.textContent = pct+"%";
+    if (lbl) lbl.textContent = `${done}/${f.tareas.length}`;
+  });
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────
+function render() {
+  document.getElementById("projTitle").textContent = appState.project?.name || "Cerro Dragón";
+  document.getElementById("projSub").textContent = appState.project?.sub || "";
+  document.getElementById("addFaseZone").style.display = editMode ? "block" : "none";
+
+  if (isAdmin) {
+    document.getElementById("headerRight").innerHTML = `
+      <button class="btn btn-sync" onclick="syncNow()">🔄 Actualizar</button>
+      <button class="btn btn-white" onclick="toggleEditMode()" id="btnEdit">
+        ${editMode ? "👁 Solo Vista" : "✏️ Modo Edición"}
+      </button>`;
+  }
+
+  document.getElementById("fases").innerHTML = appState.fases.map((f, fi) => {
+    const done = f.tareas.filter(t => (getTaskData(t.id).status||"Pendiente")==="Completado").length;
+    const pct = f.tareas.length ? Math.round(done/f.tareas.length*100) : 0;
+    const light = lighten(f.color);
+    const isCollapsed = collapsed[f.id] || false;
+
+    return `
+    <div class="fase">
+      <div class="fase-header" style="background:${light};border-left-color:${f.color}" onclick="toggleFase('${f.id}')">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:20px">${f.icon}</span>
+          <div>
+            <div class="fase-title" style="color:${f.color}">${f.id} — ${f.nombre}
+              ${editMode ? `<span class="badge-edit">FASE</span>` : ""}
+            </div>
+            <div class="fase-sub">${f.desc}</div>
+          </div>
+        </div>
+        <div class="fase-right">
+          ${editMode ? `
+            <button class="edit-btn" onclick="event.stopPropagation();openFaseModal(${fi})">✏️</button>
+            <button class="del-btn" onclick="event.stopPropagation();deleteFase(${fi})">🗑</button>` : ""}
+          <div style="text-align:right">
+            <div class="fase-pct" style="color:${f.color}" id="pct-${f.id}">${pct}%</div>
+            <div class="fase-pct-lbl" id="lbl-${f.id}">${done}/${f.tareas.length}</div>
+          </div>
+          <div class="mini-bar"><div class="mini-fill" id="fill-${f.id}" style="width:${pct}%;background:${f.color}"></div></div>
+          <span class="chevron">${isCollapsed ? "▼" : "▲"}</span>
+        </div>
+      </div>
+      <div id="body-${f.id}" style="display:${isCollapsed ? "none" : ""}">
+        <div class="table-wrap">
+        <table style="min-width:900px">
+          <thead><tr>
+            <th style="width:4%">ID</th>
+            <th style="width:16%">Tarea</th>
+            <th style="width:16%">Detalle</th>
+            <th style="width:11%">Estado</th>
+            <th style="width:10%">Responsable</th>
+            <th style="width:9%">📅 F. Inicio</th>
+            <th style="width:9%">🏁 F. Fin</th>
+            <th style="width:${editMode?"17%":"25%"}">Observaciones</th>
+            ${editMode ? `<th style="width:8%">Acciones</th>` : ""}
+          </tr></thead>
+          <tbody>
+            ${f.tareas.map(t => {
+              const td = getTaskData(t.id);
+              const st = td.status || "Pendiente";
+              const si = STATUS[st];
+              const opts = Object.keys(STATUS).map(s => `<option value="${s}" ${s===st?"selected":""}>${s}</option>`).join("");
+              const dateIni = td.dateIni || "";
+              const dateFin = td.dateFin || "";
+              return `<tr>
+                <td class="td-id">${t.id}</td>
+                <td class="td-nombre">${t.n}</td>
+                <td class="td-detalle">${t.d}</td>
+                <td>
+                  <select id="sel-${t.id}" class="st"
+                    style="color:${si.color};background:${si.bg};border-color:${si.color}"
+                    ${!isAdmin ? "disabled" : ""}
+                    onchange="setTaskField('${t.id}','status',this.value)">
+                    ${opts}
+                  </select>
+                </td>
+                <td>
+                  <input class="inp" value="${td.resp||""}"
+                    placeholder="${isAdmin?"Nombre...":"—"}"
+                    ${!isAdmin ? "disabled" : ""}
+                    oninput="setTaskField('${t.id}','resp',this.value)"/>
+                </td>
+                <td>
+                  ${isAdmin
+                    ? `<input type="date" class="date-inp" value="${dateIni}" oninput="setTaskField('${t.id}','dateIni',this.value)"/>`
+                    : `<span style="font-size:11px;color:#555">${dateIni ? fmtDate(dateIni) : "—"}</span>`
+                  }
+                </td>
+                <td>
+                  ${isAdmin
+                    ? `<input type="date" class="date-inp" value="${dateFin}" oninput="setTaskField('${t.id}','dateFin',this.value)"/>`
+                    : `<span style="font-size:11px;color:#555">${dateFin ? fmtDate(dateFin) : "—"}</span>`
+                  }
+                </td>
+                <td>
+                  <textarea class="obs"
+                    placeholder="${isAdmin?"Notas, links, comentarios...":"—"}"
+                    ${!isAdmin ? "readonly" : ""}
+                    oninput="if(isAdmin)setTaskField('${t.id}','obs',this.value)">${td.obs||""}</textarea>
+                </td>
+                ${editMode ? `<td>
+                  <button class="edit-btn" onclick="openTareaModal('${f.id}','${t.id}')">✏️</button>
+                  <button class="del-btn" onclick="deleteTarea('${f.id}','${t.id}')">🗑</button>
+                </td>` : ""}
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+        </div>
+        ${editMode ? `<div style="padding:10px 14px;background:#FAFAFA;border-top:1px solid #eee">
+          <button class="btn" style="background:#43A047;color:#fff;font-size:11px;padding:5px 12px" onclick="openTareaModal('${f.id}',null)">＋ Agregar tarea</button>
+        </div>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+
+  updateStats();
+  updateFaseProgress();
+}
+
+// ─── ACTIONS ─────────────────────────────────────────────────────
+function toggleFase(id) {
+  collapsed[id] = !collapsed[id];
+  saveCollapsed(collapsed);
+  const body = document.getElementById("body-"+id);
+  const fase = document.querySelector(`#body-${id}`).previousElementSibling;
+  const chevron = fase.querySelector(".chevron");
+  if (body) body.style.display = collapsed[id] ? "none" : "";
+  if (chevron) chevron.textContent = collapsed[id] ? "▼" : "▲";
+}
+
+function toggleEditMode() { editMode = !editMode; render(); }
+
+function editProjectName() {
+  document.getElementById("pNombre").value = appState.project?.name || "";
+  document.getElementById("pSub").value = appState.project?.sub || "";
+  document.getElementById("modalProj").classList.add("open");
+}
+function saveProjectName() {
+  appState.project = { name: document.getElementById("pNombre").value || "Mi Proyecto", sub: document.getElementById("pSub").value || "" };
+  saveState();
+  document.getElementById("modalProj").classList.remove("open");
+  document.getElementById("projTitle").textContent = appState.project.name;
+  document.getElementById("projSub").textContent = appState.project.sub;
+}
+
+// Fase modal
+function buildColorGrid(sel) {
+  document.getElementById("colorGrid").innerHTML = COLORS.map(c =>
+    `<div class="color-opt ${c===sel?"sel":""}" style="background:${c}" onclick="selectColor('${c}')"></div>`
+  ).join("");
+}
+function selectColor(c) { selectedColor = c; buildColorGrid(c); }
+function openFaseModal(fi) {
+  editingFaseIdx = fi !== undefined ? fi : null;
+  const f = fi !== undefined ? appState.fases[fi] : null;
+  document.getElementById("modalFaseTitle").textContent = f ? "Editar Fase" : "Nueva Fase";
+  document.getElementById("fNombre").value = f?.nombre || "";
+  document.getElementById("fDesc").value = f?.desc || "";
+  document.getElementById("fIcon").value = f?.icon || "📁";
+  selectedColor = f?.color || COLORS[0];
+  buildColorGrid(selectedColor);
+  document.getElementById("modalFase").classList.add("open");
+}
+function closeFaseModal() { document.getElementById("modalFase").classList.remove("open"); }
+function saveFase() {
+  const nombre = document.getElementById("fNombre").value.trim();
+  if (!nombre) { alert("El nombre es obligatorio"); return; }
+  if (editingFaseIdx !== null) {
+    Object.assign(appState.fases[editingFaseIdx], { nombre, desc: document.getElementById("fDesc").value.trim(), icon: document.getElementById("fIcon").value.trim()||"📁", color: selectedColor });
+  } else {
+    appState.fases.push({ id:"F"+Date.now()%100000, nombre, desc: document.getElementById("fDesc").value.trim(), icon: document.getElementById("fIcon").value.trim()||"📁", color: selectedColor, tareas:[] });
+  }
+  saveState(); closeFaseModal(); render();
+}
+function deleteFase(fi) {
+  if (!confirm("¿Eliminar esta fase y todas sus tareas?")) return;
+  appState.fases.splice(fi, 1); saveState(); render();
+}
+
+// Tarea modal
+function openTareaModal(faseId, tareaId) {
+  const fase = appState.fases.find(f => f.id === faseId);
+  const tarea = tareaId ? fase.tareas.find(t => t.id === tareaId) : null;
+  document.getElementById("modalTareaTitle").textContent = tarea ? "Editar Tarea" : "Nueva Tarea";
+  document.getElementById("tNombre").value = tarea?.n || "";
+  document.getElementById("tDetalle").value = tarea?.d || "";
+  document.getElementById("tFaseId").value = faseId;
+  document.getElementById("tId").value = tareaId || "";
+  document.getElementById("modalTarea").classList.add("open");
+}
+function closeTareaModal() { document.getElementById("modalTarea").classList.remove("open"); }
+function saveTarea() {
+  const nombre = document.getElementById("tNombre").value.trim();
+  if (!nombre) { alert("El nombre es obligatorio"); return; }
+  const fase = appState.fases.find(f => f.id === document.getElementById("tFaseId").value);
+  const tid = document.getElementById("tId").value;
+  if (tid) {
+    const t = fase.tareas.find(t => t.id === tid);
+    t.n = nombre; t.d = document.getElementById("tDetalle").value.trim();
+  } else {
+    fase.tareas.push({ id: fase.id+"-"+Date.now()%100000, n: nombre, d: document.getElementById("tDetalle").value.trim() });
+  }
+  saveState(); closeTareaModal(); render();
+}
+function deleteTarea(faseId, tareaId) {
+  if (!confirm("¿Eliminar esta tarea?")) return;
+  const fase = appState.fases.find(f => f.id === faseId);
+  fase.tareas = fase.tareas.filter(t => t.id !== tareaId);
+  saveState(); render();
+}
+
+document.querySelectorAll(".overlay").forEach(o => o.addEventListener("click", e => { if(e.target===o) o.classList.remove("open"); }));
+
+// ─── INIT — Firebase realtime ─────────────────────────────────────
+let firstLoad = true;
+stateRef.on("value", snap => {
+  const data = snap.val();
+  if (data) {
+    appState = data;
+    if (!appState.project) appState.project = DEFAULT.project;
+    if (!appState.tasks) appState.tasks = {};
+    if (!appState.fases) appState.fases = DEFAULT.fases;
+  } else {
+    stateRef.set({ project: appState.project, tasks: appState.tasks, fases: appState.fases });
+  }
+  if (firstLoad) {
+    document.getElementById("loading").style.display = "none";
+    firstLoad = false;
+  }
+  render();
+});
+</script>
+</body>
+</html>
